@@ -15,6 +15,8 @@ import type { OpenAICompatibleProvider } from './provider/index.js';
 import { OpenAIContentConverter } from './converter.js';
 import type { TelemetryService, RequestContext } from './telemetryService.js';
 import type { ErrorHandler } from './errorHandler.js';
+import { appendFileSync } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
 
 export interface PipelineConfig {
   cliConfig: Config;
@@ -351,6 +353,69 @@ export class ContentGenerationPipeline {
         userPromptId,
         isStreaming,
       );
+
+      // Write prompt to run-scoped log file if enabled (pretty JSON with tool_calls)
+      try {
+        const logFile = process.env['PROMPT_LOG_FILE'];
+        if (logFile) {
+          const abs = resolvePath(logFile);
+          const safeMessages = (openaiRequest.messages || []).map((m: any) => {
+            const base: any = { role: m.role };
+            if (m.name) base.name = m.name;
+            if (m.tool_call_id) base.tool_call_id = m.tool_call_id;
+            if (m.content !== undefined) base.content = m.content;
+            if (m.tool_calls) {
+              base.tool_calls = m.tool_calls.map((tc: any) => ({
+                id: tc.id,
+                type: tc.type,
+                function: tc.function
+                  ? { name: tc.function.name, arguments: tc.function.arguments }
+                  : undefined,
+              }));
+            }
+            return base;
+          });
+
+          const params: Record<string, unknown> = {};
+          const anyReq = openaiRequest as unknown as any;
+          const pick = (k: string) => {
+            const v = anyReq?.[k];
+            if (v !== undefined) params[k] = v;
+          };
+          pick('temperature');
+          pick('top_p');
+          pick('top_k');
+          pick('max_tokens');
+          pick('presence_penalty');
+          pick('frequency_penalty');
+          pick('repetition_penalty');
+          pick('n');
+          pick('stop');
+          pick('logit_bias');
+          pick('logprobs');
+          pick('top_logprobs');
+          pick('seed');
+          pick('response_format');
+          pick('stream');
+          pick('stream_options');
+          pick('user');
+
+          const payload = {
+            ts: new Date().toISOString(),
+            model: openaiRequest.model,
+            streaming: Boolean(isStreaming),
+            userPromptId,
+            messages: safeMessages,
+            tool_choice: anyReq?.tool_choice,
+            params,
+          };
+          appendFileSync(abs, `${JSON.stringify(payload, null, 2)}\n\n`, {
+            encoding: 'utf-8',
+          });
+        }
+      } catch {
+        // ignore logging errors
+      }
 
       const result = await executor(openaiRequest, context);
 

@@ -20,7 +20,7 @@
 import { spawn, execSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -63,6 +63,18 @@ const env = {
   CLI_VERSION: pkg.version,
   DEV: 'true',
 };
+
+// Create prompt log file for this run
+try {
+  const logsDir = join(root, 'prompt_log');
+  mkdirSync(logsDir, { recursive: true });
+  const ts = new Date().toISOString().replaceAll(':', '-');
+  const logPath = join(logsDir, `${ts}.log`);
+  writeFileSync(logPath, `# qwen-code prompt log\n# started_at=${new Date().toISOString()}\n`);
+  env.PROMPT_LOG_FILE = logPath;
+} catch {
+  // ignore log setup errors
+}
 
 if (process.env.DEBUG) {
   // If this is not set, the debugger will pause on the outer process rather

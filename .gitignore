@@ -48,4 +48,10 @@ logs/
 # GHA credentials
 gha-creds-*.json
 
+# Ignore the package-lock.json file in the qwen-code repository
+package-lock.json
+
+# prompt log files
+prompt_log/
+
 QWEN.md
