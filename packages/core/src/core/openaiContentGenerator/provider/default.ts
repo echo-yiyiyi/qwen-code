@@ -37,12 +37,42 @@ export class DefaultOpenAICompatibleProvider
       maxRetries = DEFAULT_MAX_RETRIES,
     } = this.contentGeneratorConfig;
     const defaultHeaders = this.buildHeaders();
+
+    // Azure OpenAI 兼容：
+    // - 需要在查询参数中附加 api-version
+    // - 建议 baseURL 指向 /openai/deployments/{deployment}
+    // - 认证使用 'api-key' 头
+    const isAzure = typeof baseUrl === 'string' && baseUrl.includes('.azure.com');
+    const apiVersion = process.env['OPENAI_API_VERSION'];
+
+    let effectiveBaseURL = baseUrl || '';
+    if (isAzure) {
+      // 规范化 baseURL，若未包含 deployments 路径则补齐
+      const hasDeploymentsPath = /\/openai\/deployments\//.test(effectiveBaseURL);
+      if (!hasDeploymentsPath) {
+        const trimmed = effectiveBaseURL.replace(/\/$/, '');
+        const deployment = this.contentGeneratorConfig.model || '';
+        effectiveBaseURL = `${trimmed}/openai/deployments/${deployment}`;
+      }
+    }
+
+    // 组合默认请求头（为 Azure 增加 api-key）
+    const headers: Record<string, string | undefined> = {
+      ...defaultHeaders,
+      ...(isAzure ? { 'api-key': apiKey } : {}),
+    };
+
+    // 组合默认查询参数（为 Azure 增加 api-version）
+    const defaultQuery: Record<string, string> | undefined =
+      isAzure && apiVersion ? { 'api-version': apiVersion } : undefined;
+
     return new OpenAI({
-      apiKey,
-      baseURL: baseUrl,
+      apiKey, // 对 Azure 来说同时保留不会影响，主要以 'api-key' 生效
+      baseURL: effectiveBaseURL || undefined,
       timeout,
       maxRetries,
-      defaultHeaders,
+      defaultHeaders: headers,
+      ...(defaultQuery ? { defaultQuery } : {}),
     });
   }
 
