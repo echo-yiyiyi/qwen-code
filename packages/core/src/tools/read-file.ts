@@ -38,7 +38,7 @@ export interface ReadFileToolParams {
   /**
    * The number of lines to read (optional)
    */
-  limit?: number;
+  // limit?: number;
 }
 
 class ReadFileToolInvocation extends BaseToolInvocation<
@@ -70,7 +70,8 @@ class ReadFileToolInvocation extends BaseToolInvocation<
       this.config.getTargetDir(),
       this.config.getFileSystemService(),
       this.params.offset,
-      this.params.limit,
+      // this.params.limit,
+      undefined,
     );
 
     if (result.error) {
@@ -157,11 +158,11 @@ export class ReadFileTool extends BaseDeclarativeTool<
               "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
             type: 'number',
           },
-          limit: {
-            description:
-              "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
-            type: 'number',
-          },
+          // limit: {
+          //   description:
+          //     "Optional: Do not set this value. For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
+          //   type: 'number',
+          // },
         },
         required: ['absolute_path'],
         type: 'object',
@@ -189,9 +190,9 @@ export class ReadFileTool extends BaseDeclarativeTool<
     if (params.offset !== undefined && params.offset < 0) {
       return 'Offset must be a non-negative number';
     }
-    if (params.limit !== undefined && params.limit <= 0) {
-      return 'Limit must be a positive number';
-    }
+    // if (params.limit !== undefined && params.limit <= 0) {
+    //   return 'Limit must be a positive number';
+    // }
 
     const fileService = this.config.getFileService();
     if (fileService.shouldGeminiIgnoreFile(params.absolute_path)) {

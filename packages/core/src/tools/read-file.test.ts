@@ -95,15 +95,7 @@ describe('ReadFileTool', () => {
       );
     });
 
-    it('should throw error if limit is zero or negative', () => {
-      const params: ReadFileToolParams = {
-        absolute_path: path.join(tempRootDir, 'test.txt'),
-        limit: 0,
-      };
-      expect(() => tool.build(params)).toThrow(
-        'Limit must be a positive number',
-      );
-    });
+    // Removed: limit validation test because 'limit' parameter is disabled/ignored
   });
 
   describe('getDescription', () => {
@@ -378,7 +370,7 @@ describe('ReadFileTool', () => {
       expect(result.returnDisplay).toBe('');
     });
 
-    it('should support offset and limit for text files', async () => {
+    it('should support offset for text files (using default limit)', async () => {
       const filePath = path.join(tempRootDir, 'paginated.txt');
       const lines = Array.from({ length: 20 }, (_, i) => `Line ${i + 1}`);
       const fileContent = lines.join('\n');
@@ -386,8 +378,7 @@ describe('ReadFileTool', () => {
 
       const params: ReadFileToolParams = {
         absolute_path: filePath,
-        offset: 5, // Start from line 6
-        limit: 3,
+        offset: 5, // Start from line 6, default limit will read to end
       };
       const invocation = tool.build(params) as ToolInvocation<
         ReadFileToolParams,
@@ -399,13 +390,13 @@ describe('ReadFileTool', () => {
         'IMPORTANT: The file content has been truncated',
       );
       expect(result.llmContent).toContain(
-        'Status: Showing lines 6-8 of 20 total lines',
+        'Status: Showing lines 6-20 of 20 total lines',
       );
       expect(result.llmContent).toContain('Line 6');
       expect(result.llmContent).toContain('Line 7');
-      expect(result.llmContent).toContain('Line 8');
+      expect(result.llmContent).toContain('Line 20');
       expect(result.returnDisplay).toBe(
-        'Read lines 6-8 of 20 from paginated.txt',
+        'Read lines 6-20 of 20 from paginated.txt',
       );
     });
 
