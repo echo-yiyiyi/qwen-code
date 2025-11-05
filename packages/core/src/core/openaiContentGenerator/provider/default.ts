@@ -43,7 +43,8 @@ export class DefaultOpenAICompatibleProvider
     // - 建议 baseURL 指向 /openai/deployments/{deployment}
     // - 认证使用 'api-key' 头
     const isAzure = typeof baseUrl === 'string' && baseUrl.includes('.azure.com');
-    const apiVersion = process.env['OPENAI_API_VERSION'];
+    const apiVersion =
+      process.env['OPENAI_API_VERSION'] || process.env['AZURE_OPENAI_API_VERSION'];
 
     let effectiveBaseURL = baseUrl || '';
     if (isAzure) {

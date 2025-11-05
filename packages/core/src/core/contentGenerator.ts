@@ -86,10 +86,13 @@ export function createContentGeneratorConfig(
   const googleCloudProject = process.env['GOOGLE_CLOUD_PROJECT'] || undefined;
   const googleCloudLocation = process.env['GOOGLE_CLOUD_LOCATION'] || undefined;
 
-  // openai auth
-  const openaiApiKey = process.env['OPENAI_API_KEY'] || undefined;
-  const openaiBaseUrl = process.env['OPENAI_BASE_URL'] || undefined;
-  const openaiModel = process.env['OPENAI_MODEL'] || undefined;
+  // openai / azure openai auth (prefer AZURE_* when both set)
+  const openaiApiKey =
+    process.env['AZURE_OPENAI_API_KEY'] || process.env['OPENAI_API_KEY'] || undefined;
+  const openaiBaseUrl =
+    process.env['AZURE_OPENAI_BASE_URL'] || process.env['OPENAI_BASE_URL'] || undefined;
+  const openaiModel =
+    process.env['AZURE_OPENAI_MODEL'] || process.env['OPENAI_MODEL'] || undefined;
 
   // Use runtime model from config if available; otherwise, fall back to parameter or default
   const effectiveModel = config.getModel() || DEFAULT_GEMINI_MODEL;
